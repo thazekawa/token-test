@@ -41,26 +41,34 @@
       }
 
       try {
-        // ★ GitHub Pagesでは明示登録が必要
-        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-
+      
+        const registration = await navigator.serviceWorker.register(
+          "./firebase-messaging-sw.js",
+          { scope: "./" }
+        );
+      
+        // ★ ここが重要
+        await navigator.serviceWorker.ready;
+      
         const token = await getToken(messaging, {
           vapidKey: "BE15Vm2YShARtdTegSke4pOl72bvX1pp2GZUJh1VZAvMAp7WBM3NMxhV9Y1Rk6kjkqnuNLJm0MC2vbRkfdtLRtM",
           serviceWorkerRegistration: registration
         });
-
+      
         if (token) {
           console.log("FCM token:", token);
           document.getElementById("output").textContent = token;
         } else {
           console.log("トークンが取得できませんでした");
         }
-
+      
       } catch (error) {
         console.error("getToken error:", error);
       }
+
     });
 
   </script>
 </body>
 </html>
+
