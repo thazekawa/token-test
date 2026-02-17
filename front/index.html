@@ -1,67 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset='utf-8/'>
+  <meta charset="utf-8">
   <link rel="manifest" href="./manifest.json">
-  <script>
-    // service workerが有効なら、service-worker.js を登録します
-    // if ('serviceWorker' in navigator) {
-    //   navigator.serviceWorker.register('./service-worker.js');
-    // }
-  </script>
 </head>
 <body>
-    <button id="allow_push_notification">トークン取得</button>
-    <p id="output"></p>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+  <button id="allow_push_notification">トークン取得</button>
+  <p id="output"></p>
 
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4Ix7j42trOZRWP2HEL0Cv0X-Grr2BQ3c",
-            authDomain: "gatsby-firebase-35beb.firebaseapp.com",
-            projectId: "gatsby-firebase-35beb",
-            storageBucket: "gatsby-firebase-35beb.firebasestorage.app",
-            messagingSenderId: "432789470435",
-            appId: "1:432789470435:web:392d408c32128ef106d9d6"
-        };
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
+    // Firebase設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4Ix7j42trOZRWP2HEL0Cv0X-Grr2BQ3c",
+      authDomain: "gatsby-firebase-35beb.firebaseapp.com",
+      projectId: "gatsby-firebase-35beb",
+      storageBucket: "gatsby-firebase-35beb.firebasestorage.app",
+      messagingSenderId: "432789470435",
+      appId: "1:432789470435:web:392d408c32128ef106d9d6"
+    };
 
-        // 通知を許可するボタンが押された時のアクション
-        const btn = document.getElementById('allow_push_notification');
-        btn.addEventListener("click", function () {
-            //let promise = Notification.requestPermission();
-            //console.log("promise: ",promise);
-            if (!("Notification" in window)) {
-                // ブラウザーが通知に対応しているか調べる
-                alert("このブラウザーはデスクトップ通知には対応していません。");
-            } else if (Notification.permission !== "denied") {
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
 
-            //if(Notification.permission !== "denied") {
-                Notification.requestPermission().then((permission) => {
-                    const messaging = getMessaging();
-                    // Add the public key generated from the console here.
-                    getToken(messaging, {vapidKey: "BE15Vm2YShARtdTegSke4pOl72bvX1pp2GZUJh1VZAvMAp7WBM3NMxhV9Y1Rk6kjkqnuNLJm0MC2vbRkfdtLRtM"})
-                        .then((token) => {
-                            if (token) {
-                                // tokenを出力
-                                //document.getElementById('output').textContent = `${token.Promise}`;
-                                console.log( "token", token);
-                                document.getElementById('output').textContent = token;
-                            }else{
-                                console.log('登録トークンがありません。生成する許可をリクエストします。');
-                            }
-                        })
-                        .catch((err) => {
-                            console.log('getToken Error',err);
-                        });
-                });
-            }
+    const btn = document.getElementById("allow_push_notification");
+
+    btn.addEventListener("click", async () => {
+
+      if (!("Notification" in window)) {
+        alert("このブラウザーは通知に対応していません。");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log("通知が許可されていません");
+        return;
+      }
+
+      try {
+        // ★ GitHub Pagesでは明示登録が必要
+        const registration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+
+        const token = await getToken(messaging, {
+          vapidKey: "BE15Vm2YShARtdTegSke4pOl72bvX1pp2GZUJh1VZAvMAp7WBM3NMxhV9Y1Rk6kjkqnuNLJm0MC2vbRkfdtLRtM",
+          serviceWorkerRegistration: registration
         });
-    </script>
+
+        if (token) {
+          console.log("FCM token:", token);
+          document.getElementById("output").textContent = token;
+        } else {
+          console.log("トークンが取得できませんでした");
+        }
+
+      } catch (error) {
+        console.error("getToken error:", error);
+      }
+    });
+
+  </script>
 </body>
 </html>
-
